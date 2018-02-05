@@ -1,0 +1,135 @@
+#1. 데이터 둘러보기: 판매자
+
+##Object:
+구매자가 판매자의 물건을 6개월 내에 다시 살 확률 구하기.
+
+##판매자:
+판매자(seller_id)와 연관되는 데이터:
+- Item_id : A unique id for the item
+- cat_id: A unique id for the category that the item belongs to
+- Brand_id: a unique id for the brand of the item 
+
+###데이터가 의미하는 것
+- 제공되는 seller_id, item_id, cat_id, brand_id의 정보는 전체 tmall에 등록된 정보가 아니라 사용자(구매자)가 접근 한 기준. 
+
+####알 수 있는 것
+
+- 사용자가 가장 많이 본 아이템, 카테고리, 브랜드, 그리고 그것들을 파는 셀러
+- 셀러당 그런 카테고리, 아이템을 몇개나 가지고 있는지. 
+
+## 데이터 보면서:
+### 데이터 불러오고 확인하기
+```{r}
+dat <-read.csv("/Users/yeeun/Documents/dev/project/TRIT/Trit_tmall/DATA/user_log_format1.csv")
+summary(dat)
+str(dat)
+```
+
+### factor로 변환
+```{r}
+dat$seller <- as.factor(dat$seller_id)
+dat$item <- as.factor(dat$item_id)
+dat$cat <- as.factor(dat$cat_id)
+dat$brand <- as.factor(dat$brand_id)
+```
+
+### 새로운 데이터 만들기 
+```{r}
+seller <- dat[c("seller","item","cat","brand")]
+str(seller)
+summary(seller)
+```
+
+### frequency 구하기, 새로운 데이터 만들기 
+```{r}
+#install.packages("doBy")
+#install.packages("plyr")
+#https://www.miskatonic.org/2012/09/24/counting-and-aggregating-r/ 여기에서 설명 봄
+library(doBy)
+library(plyr)
+
+?count
+seller_cat<- data.frame(count(seller, c("seller", "cat")))
+seller_brand<- data.frame(count(seller, c("seller", "brand")))
+seller_item<- data.frame(count(seller, c("seller", "item")))
+```
+- seller_cat: 특정 셀러의 카테고리가 몇번 activate 됐는지  
+- seller_brand: 특정 셀러의 브랜드가 몇번 activate 됐는지
+- seller_item: 특정 셀러의 아이템이 몇번 activate 됐는지
+  - 아이템은 포함이 되야할까 말아야할까 고민이 좀 되었지만, 결국 팔리기 전까지 여러 사람이 볼 수도 있는 것이기 때문에 일단은 포함함. 
+
+### 여기까지 의미 도출해보기
+```{r}
+summary(seller_cat$freq)
+```
+한번 한 셀러의 카테고리가 몇번 activate 됐는지 평균을 내보려고 했는데, max가 어떤 카테고리인지는 모르겠지만 정말 큼. 그래도 일단 대략적으로 한 셀러당 42개정도의 카테고리를 유저가 본다는 것을 알 수 있음. (max가 너무 크기 떄문에 median이 더 적절할 것 같아서 선택)
+
+```{r}
+summary(seller_brand$freq)
+```
+브랜드 같은 경우도 비슷한 양상을 보임. 아마 몇개의 유명한 브랜드가 많이 팔리고, 다른 잘 알려지지 않은 브랜드들은 잘 클릭되지 않는 것 같음. 
+```{r}
+summary(seller_item$freq)
+```
+아이템 같은 경우도 하나의 아이템을 유저들이 많이 본다는 것 (카트에 담는다거나 등) 을 알 수 있음 
+
+
+### 카테고리 당
+```{r}
+cat_brand<- data.frame(count(seller, c("cat", "brand")))
+cat_item<- data.frame(count(seller, c("cat", "item")))
+brand_item <- data.frame(count(seller, c("brand", "item")))
+
+summary(cat_brand$freq)
+```
+
+```{r}
+summary(cat_item$freq)
+```
+
+```{r}
+summary(brand_item$freq)
+```
+
+### 순열
+```{r}
+sort_SellCat <- seller_cat[order(-seller_cat$freq),] 
+sort_SellBran <- seller_brand[order(-seller_brand$freq),] 
+sort_Sellitem <- seller_item[order(-seller_item$freq),] 
+
+sort_CatBran <- cat_brand[order(-cat_brand$freq),] 
+sort_CatItem <- cat_item[order(-cat_item$freq),] 
+sort_BranItem <- brand_item[order(-brand_item$freq),] 
+
+head(sort_SellCat)
+```
+
+```{r}
+head(sort_SellBran)
+```
+
+```{r}
+head(sort_Sellitem)
+```
+
+```{r}
+head(sort_CatBran)
+```
+
+```{r}
+head(sort_CatItem)
+```
+
+```{r}
+head(sort_BranItem)
+```
+
+특정 판매자, 특정 카테고리, 브랜드, 아이템이 독식. 
+
+
+
+
+
+
+
+
